@@ -1,7 +1,8 @@
 import os
 import subprocess
 
-LILYPOND = r".\lilypond-2.24.4\bin\lilypond.exe"  # full path to lilypond executable
+DEFAULT_LILYPOND = r".\lilypond-2.24.4\bin\lilypond.exe"  # default path to lilypond executable
+LILYPOND = DEFAULT_LILYPOND
 
 NOTE_TO_LILYPOND = {
     "C0": "c,,,", "D0": "d,,,", "E0": "e,,,", "F0": "f,,,", "G0": "g,,,", "A0": "a,,,", "B0": "b,,,",
@@ -14,7 +15,7 @@ NOTE_TO_LILYPOND = {
 }
 
 
-def generate_note_image(note="C4", clef="treble", output_dir="note_images", width=300, height=200, crop_x=0, crop_y=0):
+def generate_note_image(note="C4", clef="treble", output_dir="note_images", width=300, height=200, crop_x=0, crop_y=0, lilypond_path=None):
     """Generate a PNG of a note on a staff using LilyPond, then crop to fixed size from (crop_x, crop_y)."""
     # Support multiple notes for chords
     note_list = [n.strip().upper() for n in note.split(",")]
@@ -63,7 +64,7 @@ def generate_note_image(note="C4", clef="treble", output_dir="note_images", widt
         f.write(ly_content)
 
     subprocess.run([
-        LILYPOND,
+        lilypond_path or LILYPOND,
         "-fpng",
         "-dresolution=300",
         "-o", os.path.join(output_dir, filename),
@@ -94,9 +95,38 @@ if __name__ == "__main__":
     width, height = 100, 100
     crop_x, crop_y = 0, 0
     clef = None
+    lilypond_path = None
+
+    def print_help():
+        print("""
+Usage:
+    python generate_notes.py [LILYPOND_PATH] [note=NOTE] [crop=WxH] [margin=X,Y] [clef=NAME]
+
+Arguments:
+    LILYPOND_PATH   Optional. Path to lilypond.exe. If omitted, uses default.
+    note=NOTE       Note or comma-separated notes (e.g. C4, D4,E4, etc). Default: C4
+    crop=WxH        Output image size in pixels (e.g. crop=120x80). Default: 100x100
+    margin=X,Y      Crop offset in pixels (e.g. margin=10,20). Default: 0,0
+    clef=NAME       Clef to use (treble or bass). Default: bass if note ends with 2, else treble
+    --help          Show this help message and exit.
+
+Examples:
+    python generate_notes.py note=C4
+    python generate_notes.py "C:\\Path\\To\\lilypond.exe" note=E4 crop=120x80 margin=10,20 clef=treble
+        """)
+
+    args = sys.argv[1:]
+    if any(a in ("--help", "-h", "/?") for a in args):
+        print_help()
+        sys.exit(0)
+
+    # If first argument is not a named parameter, treat as lilypond_path
+    if args and not args[0].lower().startswith(("note=","crop=","margin=","clef=")):
+        lilypond_path = args[0]
+        args = args[1:]
 
     # Parse named parameters
-    for arg in sys.argv[1:]:
+    for arg in args:
         if arg.lower().startswith("note="):
             note = arg.split("=", 1)[1].upper()
         elif arg.lower().startswith("crop="):
@@ -113,5 +143,5 @@ if __name__ == "__main__":
     if not clef:
         clef = "bass" if note.endswith("2") else "treble"
 
-    print(f"Generating note={note} crop={width}x{height} margin={crop_x},{crop_y} clef={clef}")
-    generate_note_image(note, clef, width=width, height=height, crop_x=crop_x, crop_y=crop_y)
+    print(f"Generating note={note} crop={width}x{height} margin={crop_x},{crop_y} clef={clef} lilypond={lilypond_path or LILYPOND}")
+    generate_note_image(note, clef, width=width, height=height, crop_x=crop_x, crop_y=crop_y, lilypond_path=lilypond_path)
