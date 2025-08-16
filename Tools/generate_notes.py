@@ -15,7 +15,7 @@ NOTE_TO_LILYPOND = {
 }
 
 
-def generate_note_image(note="C4", clef="treble", output_dir="note_images", width=300, height=200, crop_x=0, crop_y=0, lilypond_path=None):
+def generate_note_image(note="C4", clef="treble", output_dir="note_images", width=300, height=250, crop_x=0, crop_y=0, lilypond_path=None):
     """Generate a PNG of a note on a staff using LilyPond, then crop to fixed size from (crop_x, crop_y)."""
     # Support multiple notes for chords
     note_list = [n.strip().upper() for n in note.split(",")]
